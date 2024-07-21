@@ -47,6 +47,7 @@ if [ ! -e "${_AUTH_FILE}" ]; then
   touch "${_AUTH_FILE}"
 fi
 
+# Add DB_USER credentials if not already in the file
 if [ -n "$DB_USER" -a -n "$DB_PASSWORD" -a -e "${_AUTH_FILE}" ] && ! grep -q "^\"$DB_USER\"" "${_AUTH_FILE}"; then
   if [ "$AUTH_TYPE" == "plain" ] || [ "$AUTH_TYPE" == "scram-sha-256" ]; then
      pass="$DB_PASSWORD"
@@ -55,6 +56,17 @@ if [ -n "$DB_USER" -a -n "$DB_PASSWORD" -a -e "${_AUTH_FILE}" ] && ! grep -q "^\
   fi
   echo "\"$DB_USER\" \"$pass\"" >> ${PG_CONFIG_DIR}/userlist.txt
   echo "Wrote authentication credentials to ${PG_CONFIG_DIR}/userlist.txt"
+fi
+
+# Add ADMIN_USERNAME credentials if not already in the file
+if [ -n "$ADMIN_USERNAME" -a -n "$ADMIN_PASSWORD" -a -e "${_AUTH_FILE}" ] && ! grep -q "^\"$ADMIN_USERNAME\"" "${_AUTH_FILE}"; then
+  if [ "$AUTH_TYPE" == "plain" ] || [ "$AUTH_TYPE" == "scram-sha-256" ]; then
+     admin_pass="$ADMIN_PASSWORD"
+  else
+     admin_pass="md5$(echo -n "$ADMIN_PASSWORD$ADMIN_USERNAME" | md5sum | cut -f 1 -d ' ')"
+  fi
+  echo "\"$ADMIN_USERNAME\" \"$admin_pass\"" >> ${PG_CONFIG_DIR}/userlist.txt
+  echo "Wrote admin authentication credentials to ${PG_CONFIG_DIR}/userlist.txt"
 fi
 
 if [ ! -f ${PG_CONFIG_DIR}/pgbouncer.ini ]; then
